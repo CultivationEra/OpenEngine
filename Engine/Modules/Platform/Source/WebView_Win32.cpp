@@ -47,6 +47,25 @@ namespace Platform {
 // A page that fails to load and a page that renders both leave an empty rectangle on screen,
 // because this view draws above the GPU frame. The navigation outcome is reported to the log
 // for that reason: the log is the only place the two differ.
+
+// Text arrives as UTF-8 and every part of the Win32 API takes UTF-16. Constructing a std::wstring from
+// a byte range widens each byte instead of decoding it, so any character outside ASCII arrives altered
+// - "cafe" with an accent becomes two unrelated characters, and a URL built from it fails to load. This
+// is the same conversion the other Win32 sources in this module do, kept local like theirs.
+static std::wstring WebViewTextToWide(const std::string& text) {
+    if (text.empty()) {
+        return std::wstring();
+    }
+    const int length =
+        MultiByteToWideChar(CP_UTF8, 0, text.c_str(), static_cast<int>(text.size()), nullptr, 0);
+    if (length <= 0) {
+        return std::wstring();
+    }
+    std::wstring result(length, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, text.c_str(), static_cast<int>(text.size()), result.data(), length);
+    return result;
+}
+
 class WebView_Win32 : public IWebView {
 public:
     WebView_Win32(Window* parentWindow) : m_ParentWindow(parentWindow) {
@@ -397,7 +416,7 @@ private:
             return false;
         }
 
-        std::wstring wurl(url.begin(), url.end());
+        std::wstring wurl = WebViewTextToWide(url);
         return SUCCEEDED(m_WebView->Navigate(wurl.c_str()));
     }
 
@@ -406,7 +425,7 @@ private:
             return false;
         }
 
-        std::wstring whtml(html.begin(), html.end());
+        std::wstring whtml = WebViewTextToWide(html);
         return SUCCEEDED(m_WebView->NavigateToString(whtml.c_str()));
     }
 
