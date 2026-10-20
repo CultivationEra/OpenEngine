@@ -104,6 +104,7 @@ bool IsKnownEvent(const char* name)
     if (!name)
         return false;
     static const char* const kNames[] = {"UI.ButtonClick",   "UI.MouseEnter",    "UI.MouseMove",
+                                         "UI.MouseDown",     "UI.MouseUp",       "UI.MouseCancel",
                                          "UI.FocusIn",       "UI.ValueChanging", "UI.ValueChanged",
                                          "UI.ScrollOffsetChanged", "UI.AttachedToPanel",
                                          "UI.DetachedFromPanel"};
@@ -591,6 +592,29 @@ GE_API GE_Result GE_CDECL GE_TestUI_Dispatch(uint64_t instanceId, const char* ev
     data.eventId = Fnv1a64(eventName);
     data.x = x;
     data.y = y;
+    data.mods = mods;
+    const int invoked = DispatchToSubscribers(instanceId, eventName, data);
+    if (outInvoked)
+        *outInvoked = invoked;
+    return GE_Result_Ok;
+}
+
+// Raise a PRESS: the pointer-shaped dispatch, plus the one field it does not carry. Kept separate
+// from GE_TestUI_Dispatch for the same reason GE_TestUI_DispatchPayload is - the callers that only
+// care about a position keep their signature, and what these events exist to deliver is the button.
+GE_API GE_Result GE_CDECL GE_TestUI_DispatchPress(uint64_t instanceId, const char* eventName, float x, float y,
+                                                 int32_t button, int32_t mods, int32_t* outInvoked)
+{
+    if (outInvoked)
+        *outInvoked = 0;
+    if (!IsKnownEvent(eventName))
+        return GE_Result_InvalidArg;
+    GE_UIEventData data{};
+    data.elementInstanceId = instanceId;
+    data.eventId = Fnv1a64(eventName);
+    data.x = x;
+    data.y = y;
+    data.button = button;
     data.mods = mods;
     const int invoked = DispatchToSubscribers(instanceId, eventName, data);
     if (outInvoked)

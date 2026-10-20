@@ -86,6 +86,21 @@ constexpr SubscribableEvent kSubscribableEvents[] = {
     {"UI.ButtonClick", GameEngine::kEventButtonClick}, // Ui.Button.Clicked
     {"UI.MouseEnter", GameEngine::kEventMouseEnter},   // Ui.Element.PointerEntered
     {"UI.MouseMove", GameEngine::kEventMouseMove},     // Ui.Element.MouseMoved
+    // THE POINTER PRESS LIFECYCLE. A click is not a press: ButtonClick is left-only, dispatched by
+    // Button::TriggerClick on that control alone, and it fires on RELEASE. A script that needs to know
+    // which button went down, where, or that a press was abandoned has nowhere else to look - and the
+    // engine already models all three, with UIEvent::Button carrying GLFW's numbering.
+    //
+    // Dispatched by the manager's routing onto whatever element the pointer found, like the other
+    // pointer events, so every element is a valid subscription target and no ElementDispatchesEvent
+    // row belongs here.
+    //
+    // MouseCancel is deliberately NOT folded into MouseUp: it means the press ended without a release
+    // (the pointer stream the host reads ended), it carries the unknown-position sentinel, and a
+    // control that arms on MouseDown must disarm on it without activating.
+    {"UI.MouseDown", GameEngine::kEventMouseDown},     // Ui.Element.Pressed
+    {"UI.MouseUp", GameEngine::kEventMouseUp},         // Ui.Element.Released
+    {"UI.MouseCancel", GameEngine::kEventMouseCancel}, // Ui.Element.PressCancelled
     {"UI.FocusIn", GameEngine::kEventFocusIn},         // Ui.Element.FocusGained
     {"UI.ValueChanging", GameEngine::kEventValueChanging},
     {"UI.ValueChanged", GameEngine::kEventValueChanged},

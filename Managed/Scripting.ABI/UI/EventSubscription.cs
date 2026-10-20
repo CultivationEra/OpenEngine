@@ -301,6 +301,12 @@ namespace GameEngine.Scripting
                     case Action<ClickArgs> click:
                         click(new ClickArgs(data.Mods));
                         break;
+                    // A press carries the button the click deliberately does not: ButtonClick is left-only
+                    // because Button::TriggerClick is its only dispatcher, and these three are the manager's
+                    // routing, which is why the button index is the whole point of subscribing.
+                    case Action<PressArgs> press:
+                        press(new PressArgs(data.X, data.Y, data.Button, data.Mods));
+                        break;
                     case Action<ValueArgs> value:
                         value(new ValueArgs(data.Value));
                         break;

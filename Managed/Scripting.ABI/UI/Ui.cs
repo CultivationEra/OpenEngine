@@ -200,6 +200,9 @@ namespace GameEngine.Scripting
             internal const string ButtonClick = "UI.ButtonClick";
             internal const string MouseEnter = "UI.MouseEnter";
             internal const string MouseMove = "UI.MouseMove";
+            internal const string MouseDown = "UI.MouseDown";
+            internal const string MouseUp = "UI.MouseUp";
+            internal const string MouseCancel = "UI.MouseCancel";
             internal const string FocusIn = "UI.FocusIn";
             internal const string ValueChanging = "UI.ValueChanging";
             internal const string ValueChanged = "UI.ValueChanged";
@@ -265,6 +268,69 @@ namespace GameEngine.Scripting
 
             /// <summary>Modifier-key bitmask as the engine reports it.</summary>
             public readonly int Mods;
+        }
+
+        /// <summary>
+        /// The buttons, in the numbering <see cref="PressArgs.Button"/> carries.
+        /// </summary>
+        /// <remarks>
+        /// GLFW's numbering, because that is what the engine's <c>UIEvent::Button</c> holds and what
+        /// <c>UIManager::OnMouseButton</c> receives from the platform. Mirrored here so a listener does not
+        /// write 1 and hope, not translated: a value this does not name is still a real button index.
+        /// </remarks>
+        public static class PointerButton
+        {
+            public const int Left = 0;
+            public const int Right = 1;
+            public const int Middle = 2;
+        }
+
+        /// <summary>
+        /// What a pointer press or release carries: which button, where, and with what modifiers.
+        /// </summary>
+        /// <remarks>
+        /// <para>A PRESS IS NOT A CLICK, and this type is how a script can tell them apart.
+        /// <see cref="ClickArgs"/> comes from a Button's own activation — left button or Space/Enter, on
+        /// release, only on that control. A press arrives on whatever element the pointer found, for any
+        /// button, and bubbles, so a container can hear one that began on a cell inside it.</para>
+        ///
+        /// <para><c>X</c> and <c>Y</c> are in the HOST'S UI SPACE, the same space as
+        /// <see cref="PointerArgs"/> — not the element's own layout space, and not world space. A release
+        /// that ended a cancelled press carries the unknown-position sentinel; read
+        /// <see cref="Ui.Element.PressCancelled"/> for that case rather than inferring it from the position.</para>
+        /// </remarks>
+        public readonly struct PressArgs
+        {
+            internal PressArgs(float x, float y, int button, int mods)
+            {
+                X = x;
+                Y = y;
+                Button = button;
+                Mods = mods;
+            }
+
+            /// <summary>Pointer X in the host's UI space.</summary>
+            public readonly float X;
+
+            /// <summary>Pointer Y in the host's UI space.</summary>
+            public readonly float Y;
+
+            /// <summary>
+            /// Which button, in GLFW's numbering: see <see cref="PointerButton"/>.
+            /// </summary>
+            public readonly int Button;
+
+            /// <summary>Modifier-key bitmask as the engine reports it.</summary>
+            public readonly int Mods;
+
+            /// <summary>Whether this was the left (primary) button.</summary>
+            public bool IsLeft => Button == PointerButton.Left;
+
+            /// <summary>Whether this was the right (secondary) button.</summary>
+            public bool IsRight => Button == PointerButton.Right;
+
+            /// <summary>Whether this was the middle button.</summary>
+            public bool IsMiddle => Button == PointerButton.Middle;
         }
 
         /// <summary>

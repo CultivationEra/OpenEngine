@@ -190,6 +190,51 @@ namespace GameEngine.Scripting
                 remove => EventSubscription.Remove(InstanceId, EventNames.MouseMove, value);
             }
 
+            /// <summary>
+            /// A pointer button went down on this element or on a descendant of it.
+            /// </summary>
+            /// <remarks>
+            /// Bubbles, like the other pointer events: a press that began on a cell inside a panel reaches the
+            /// panel too, so a container can own the gesture and its children can stay dumb.
+            ///
+            /// A press is not an activation — nothing is clicked until a release lands, and
+            /// <see cref="Released"/> is where to look for that.
+            /// </remarks>
+            public event Action<PressArgs> Pressed
+            {
+                add => EventSubscription.Add(InstanceId, EventNames.MouseDown, value);
+                remove => EventSubscription.Remove(InstanceId, EventNames.MouseDown, value);
+            }
+
+            /// <summary>
+            /// A pointer button came up over this element.
+            /// </summary>
+            /// <remarks>
+            /// The release half of <see cref="Pressed"/>. It is NOT the click: this arrives for any button and
+            /// on any element, where <c>Button.Clicked</c> is the control's own activation and only fires when
+            /// the press began on that button and the pointer is still on it.
+            /// </remarks>
+            public event Action<PressArgs> Released
+            {
+                add => EventSubscription.Add(InstanceId, EventNames.MouseUp, value);
+                remove => EventSubscription.Remove(InstanceId, EventNames.MouseUp, value);
+            }
+
+            /// <summary>
+            /// The press in flight ended without a release — the pointer stream the host reads stopped.
+            /// </summary>
+            /// <remarks>
+            /// The engine makes this its own event rather than a release at an unknown position, because a
+            /// listener reasonably reads a release as "the user let go of this" and most never look at the
+            /// position. A control that armed on <see cref="Pressed"/> disarms here and does NOT activate;
+            /// this is the event that makes "began here, ended elsewhere, do nothing" expressible.
+            /// </remarks>
+            public event Action<PressArgs> PressCancelled
+            {
+                add => EventSubscription.Add(InstanceId, EventNames.MouseCancel, value);
+                remove => EventSubscription.Remove(InstanceId, EventNames.MouseCancel, value);
+            }
+
             /// <summary>This element gained keyboard focus.</summary>
             public event Action FocusGained
             {
