@@ -1792,6 +1792,82 @@ namespace GameEngine.HotReload
             }
         }
 
+        private static readonly HashSet<string> s_ScriptDependencyDirs = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Loads a script project's staged dependencies into the default context before its assembly is read.
+        /// </summary>
+        /// <remarks>
+        /// The scripts assembly arrives as bytes and is loaded with LoadFromStream, so it has no Location and
+        /// CollectibleAssemblyContext.Load deliberately returns null to keep one shared type identity with the
+        /// engine. Every reference therefore falls back to Default — where nothing has ever put the libraries
+        /// the project references. The first type that mentions one fails to bind, naming a DLL that sits beside
+        /// the assembly. Loading <c>Dependencies/</c> here, before the stream load, is the missing hand-off.
+        /// </remarks>
+        private static void EnsureScriptDependenciesInDefault(string scriptsAssemblyPath)
+        {
+            try
+            {
+                string? scriptsDirectory = Path.GetDirectoryName(scriptsAssemblyPath);
+                if (string.IsNullOrEmpty(scriptsDirectory))
+                    return;
+
+                string dependencies = Path.Combine(scriptsDirectory, ScriptDependencies.FolderName);
+                if (s_ScriptDependencyDirs.Add(dependencies))
+                {
+                    // Late requests (a path first reached during a later hot reload) still resolve.
+                    AssemblyLoadContext.Default.Resolving += (context, name) =>
+                    {
+                        try
+                        {
+                            if (string.IsNullOrEmpty(name.Name))
+                                return null;
+                            string candidate = Path.Combine(dependencies, name.Name + ".dll");
+                            return File.Exists(candidate) ? context.LoadFromAssemblyPath(candidate) : null;
+                        }
+                        catch
+                        {
+                            return null;
+                        }
+                    };
+                }
+
+                foreach (string dll in ScriptDependencies.Enumerate(scriptsAssemblyPath))
+                {
+                    try
+                    {
+                        string? simple = AssemblyName.GetAssemblyName(dll).Name;
+                        if (string.IsNullOrEmpty(simple))
+                            continue;
+
+                        bool alreadyLoaded = false;
+                        foreach (Assembly existing in AssemblyLoadContext.Default.Assemblies)
+                        {
+                            if (string.Equals(existing.GetName().Name, simple, StringComparison.OrdinalIgnoreCase))
+                            {
+                                alreadyLoaded = true;
+                                break;
+                            }
+                        }
+                        if (alreadyLoaded)
+                            continue;
+
+                        AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.GetFullPath(dll));
+                        Console.WriteLine($"[Scripts] loaded dependency '{Path.GetFileName(dll)}' into Default");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine(
+                            $"[Scripts] could not load dependency '{Path.GetFileName(dll)}': {ex.GetType().Name}: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[Scripts] dependency staging for '{scriptsAssemblyPath}' failed: {ex.Message}");
+            }
+        }
+
         public static int PreloadAssemblyContext(string assemblyPath)
         {
             try
@@ -1814,6 +1890,10 @@ namespace GameEngine.HotReload
                     Console.WriteLine("[HotReload] Assembly validation failed during preload");
                     return -1;
                 }
+
+                // Step 2b: the project's staged dependencies must be in Default BEFORE the assembly is read,
+                // because a stream-loaded assembly has no directory for the runtime to probe.
+                EnsureScriptDependenciesInDefault(assemblyPath);
 
                 // Step 3: Create new collectible context (can be done on background thread)
                 var newContext = new CollectibleAssemblyContext();
@@ -1900,6 +1980,8 @@ namespace GameEngine.HotReload
                     if (!string.IsNullOrEmpty(scriptsDir))
                     {
                         string packagesDir = Path.Combine(scriptsDir, "Packages");
+                        // The same hand-off as the preload path: a reloaded assembly arrives as bytes too.
+                        EnsureScriptDependenciesInDefault(assemblyPath);
                         LoadPackageAssemblies(newContext, packagesDir, packageAssemblies);
                         if (editorAsm != null)
                             LoadPackageAssemblies(newContext, Path.Combine(packagesDir, "Editor"), packageAssemblies);
