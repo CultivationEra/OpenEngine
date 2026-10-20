@@ -135,7 +135,7 @@ void GameViewController::EnsureGameUI()
     GameUI::SetHost(m_GameUI.get());
 }
 
-void GameViewController::HandleGameUiPointer(bool over, float x, float y, bool down, int mods)
+void GameViewController::HandleGameUiPointerMove(bool over, float x, float y, int mods)
 {
     if (!m_GameUI)
         return;
@@ -147,13 +147,25 @@ void GameViewController::HandleGameUiPointer(bool over, float x, float y, bool d
         world->GetWorldId() != m_GameUiWorldId ||
         world->GetLifecycleResetGeneration() != m_GameUiWorldGeneration)
     {
-        m_GameUI->CancelPointer(down ? GameUIHost::PrimaryButtonState::Held
-                                     : GameUIHost::PrimaryButtonState::Released);
+        // A null pointer cancels the gesture and leaves hover, exactly as before. It does NOT press: the
+        // host's own PrimaryDown is what SetPointer compares against, so a position can never arm.
+        m_GameUI->UpdatePointer(nullptr);
         return;
     }
     GameUIHost::PointerState pointer{x * static_cast<float>(m_GameUiWidth),
-                                     y * static_cast<float>(m_GameUiHeight), down, mods};
+                                     y * static_cast<float>(m_GameUiHeight),
+                                     m_GameUI->PrimaryDown(), mods};
     m_GameUI->UpdatePointer(&pointer);
+}
+
+void GameViewController::HandleGameUiPointerButton(int button, bool pressed, int mods)
+{
+    if (!m_GameUI)
+        return;
+    // Input may precede this window's next composite. Script callbacks must
+    // resolve gameplay UI against the receiving host, not the last rendered one.
+    GameUI::SetHost(m_GameUI.get());
+    m_GameUI->OnMouseButton(button, pressed, mods);
 }
 
 std::optional<Engine::Renderer::Camera> GameViewController::PrepareView(

@@ -3307,19 +3307,32 @@ bool EditorApplication::Initialize()
             // that still holds the gesture and has to be told the surface ended.
             gameViewPanel->SetPointerCallback(
                 [this, gameViewPanel, pointerWindowId = uint64_t{0}]
-                (bool over, float x, float y, bool down, int mods) mutable
+                (bool over, float x, float y, int mods) mutable
                 {
                     EditorWindowContext* destination = over ? FindWindowHostingGameView(gameViewPanel) : nullptr;
                     const uint64_t nextId = destination ? destination->windowId : 0;
                     if (pointerWindowId != nextId)
                         for (auto& win : m_Windows)
                             if (win && win->windowId == pointerWindowId && win->gameView)
-                                win->gameView->HandleGameUiPointer(false, 0.0f, 0.0f, false, 0);
+                                win->gameView->HandleGameUiPointerMove(false, 0.0f, 0.0f, 0);
                     pointerWindowId = nextId;
-                    if (destination && down)
-                        m_GameViewPointerLock->OnGameViewPressed();
                     if (destination)
-                        destination->gameView->HandleGameUiPointer(true, x, y, down, mods);
+                        destination->gameView->HandleGameUiPointerMove(true, x, y, mods);
+                });
+
+            // BUTTONS COME THROUGH THEIR OWN CALLBACK, with the index the position path cannot carry. The
+            // press goes straight to the host's OnMouseButton - the path the standalone Player uses - so the
+            // HUD sees button 1 as button 1. The look latch moves here too, because it is the PRIMARY
+            // button's: pressing it in the game view is what starts mouse-look, and a right-press must not.
+            gameViewPanel->SetPointerButtonCallback(
+                [this, gameViewPanel](int button, bool pressed, int mods)
+                {
+                    EditorWindowContext* destination = FindWindowHostingGameView(gameViewPanel);
+                    if (!destination)
+                        return;
+                    if (button == Input::kMouseButton_Left && pressed)
+                        m_GameViewPointerLock->OnGameViewPressed();
+                    destination->gameView->HandleGameUiPointerButton(button, pressed, mods);
                 });
 
             gameViewPanel->SetActivationArmedCallback(
@@ -8254,9 +8267,12 @@ void EditorApplication::OnShutdown()
     // callbacks before their UI dispatchers and this application are destroyed.
     for (auto& win : m_Windows)
         if (win && win->gameView)
-            win->gameView->HandleGameUiPointer(false, 0.0f, 0.0f, false, 0);
+            win->gameView->HandleGameUiPointerMove(false, 0.0f, 0.0f, 0);
     if (auto* gameView = FindFirstPanelOfType<GameViewPanel>(m_PanelStorage))
+    {
         gameView->ClearPointerCallback();
+        gameView->ClearPointerButtonCallback();
+    }
 
     // Wait for the startup preload jobs before tearing down the systems they reference.
     if (m_UiPreload.IsValid())

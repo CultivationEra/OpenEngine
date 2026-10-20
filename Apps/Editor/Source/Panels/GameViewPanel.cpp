@@ -1,3 +1,4 @@
+#include "Input/KeyCodes.h"
 #include "Panels/GameViewPanel.h"
 
 #include "Assets/AssetManager.h"
@@ -60,7 +61,20 @@ void GameViewPanel::ClearViewportPointerHandlers()
 void GameViewPanel::SetPointerCallback(PointerCallback callback)
 {
     CancelViewportPointer();
-    m_PointerSink = callback ? std::make_shared<PointerSink>(PointerSink{std::move(callback)}) : nullptr;
+    m_PointerSink = callback ? std::make_shared<PointerSink>(PointerSink{std::move(callback), {}, 0}) : nullptr;
+}
+
+void GameViewPanel::SetPointerButtonCallback(PointerButtonCallback callback)
+{
+    if (!m_PointerSink)
+        m_PointerSink = std::make_shared<PointerSink>(PointerSink{{}, {}, 0});
+    m_PointerSink->ButtonCallback = std::move(callback);
+}
+
+void GameViewPanel::ClearPointerButtonCallback()
+{
+    if (m_PointerSink)
+        m_PointerSink->ButtonCallback = {};
 }
 
 void GameViewPanel::ClearPointerCallback()
@@ -79,11 +93,11 @@ void GameViewPanel::CancelViewportPointer()
     if (m_PointerSink)
     {
         ++m_PointerSink->Generation;
-        ForwardViewportPointer(false, 0.0f, 0.0f, false, 0);
+        ForwardViewportPointer(false, 0.0f, 0.0f, 0);
     }
 }
 
-void GameViewPanel::ForwardViewportPointer(bool over, float x, float y, bool down, int mods)
+void GameViewPanel::ForwardViewportPointer(bool over, float x, float y, int mods)
 {
     if (!m_PointerSink)
         return;
@@ -103,9 +117,31 @@ void GameViewPanel::ForwardViewportPointer(bool over, float x, float y, bool dow
     // its scratch chain is shared. The existing dispatcher drains after that
     // bubble, before OnMouseButton returns; no render boundary samples the edges.
     // Capture values and the owned sink only, never the panel/viewport/controller.
-    dispatcher->Post([sink, generation, over, x, y, down, mods] {
+    dispatcher->Post([sink, generation, over, x, y, mods] {
         if (sink->Generation == generation && sink->Callback)
-            sink->Callback(over, x, y, down, mods);
+            sink->Callback(over, x, y, mods);
+    });
+}
+
+void GameViewPanel::ForwardViewportButton(int button, bool pressed, int mods)
+{
+    if (!m_PointerSink)
+        return;
+    if (auto* owner = GetOwnerManager())
+        m_PointerDispatchOwner = UIManagerRef(owner);
+    // A second UIManager must not dispatch inside the editor's active bubble, exactly as the position
+    // path documents. Same sink, same generation, so a revoke takes the queued button with it.
+    UIManager* dispatchOwner = m_PointerDispatchOwner.Get();
+    if (!dispatchOwner)
+        return;
+    auto* dispatcher = dispatchOwner->GetDispatcher();
+    if (!dispatcher)
+        return;
+    const auto sink = m_PointerSink;
+    const uint64_t generation = sink->Generation;
+    dispatcher->Post([sink, generation, button, pressed, mods] {
+        if (sink->Generation == generation && sink->ButtonCallback)
+            sink->ButtonCallback(button, pressed, mods);
     });
 }
 
@@ -348,25 +384,25 @@ void GameViewPanel::RegisterViewportPointerHandlers(UIElement& viewport)
         if (!(x >= 0.0f && x < 1.0f && y >= 0.0f && y < 1.0f))
             CancelViewportPointer();
         else
-            ForwardViewportPointer(true, x, y, m_PointerDown, e.Mods);
+            ForwardViewportPointer(true, x, y, e.Mods);
     };
     try
     {
         m_PointerTokens[0] = element->RegisterEventHandler(kEventMouseMove, [forward](UIEvent& e) { forward(e); });
         m_PointerTokens[1] = element->RegisterEventHandler(kEventMouseEnter, [forward](UIEvent& e) { forward(e); });
-        m_PointerTokens[2] = element->RegisterEventHandler(kEventMouseDown, [this, forward](UIEvent& e) {
-            if (e.Button == 0)
-            {
+        // EVERY BUTTON, WITH ITS INDEX. The old handlers dropped anything that was not the primary, one
+        // line after the press arrived carrying button 1 — which is why the game HUD could not see a
+        // right-press in the editor at all. Only the LOOK LATCH stays primary-only: right-drag is not a
+        // look gesture here.
+        m_PointerTokens[2] = element->RegisterEventHandler(kEventMouseDown, [this](UIEvent& e) {
+            if (e.Button == Input::kMouseButton_Left)
                 m_PointerDown = true;
-                forward(e);
-            }
+            ForwardViewportButton(e.Button, true, e.Mods);
         });
-        m_PointerTokens[3] = element->RegisterEventHandler(kEventMouseUp, [this, forward](UIEvent& e) {
-            if (e.Button == 0)
-            {
+        m_PointerTokens[3] = element->RegisterEventHandler(kEventMouseUp, [this](UIEvent& e) {
+            if (e.Button == Input::kMouseButton_Left)
                 m_PointerDown = false;
-                forward(e);
-            }
+            ForwardViewportButton(e.Button, false, e.Mods);
         });
         m_PointerTokens[4] = element->RegisterEventHandler(kEventMouseLeave, [this](UIEvent&) {
             CancelViewportPointer();

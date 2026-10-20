@@ -80,9 +80,14 @@ protected:
         UILayoutAccess::SetLastLayoutRect(*Panel, 0, 0, 600, 400);
         UILayoutAccess::SetLastLayoutRect(*Viewport, 100, 50, 400, 200);
         GameViewPanelTestAccess::BindViewport(*Panel);
-        Panel->SetPointerCallback([this](bool over, float x, float y, bool down, int mods) {
-            GameUIHost::PointerState pointer{x * 800, y * 400, down, mods};
+        Panel->SetPointerCallback([this](bool over, float x, float y, int mods) {
+            // Position only: the host's own primary state means SetPointer sees no edge, so a move can
+            // never synthesize a press. Presses come from the button callback below.
+            GameUIHost::PointerState pointer{x * 800, y * 400, Host.PrimaryDown(), mods};
             Host.UpdatePointer(over ? &pointer : nullptr);
+        });
+        Panel->SetPointerButtonCallback([this](int button, bool pressed, int mods) {
+            Host.OnMouseButton(button, pressed, mods);
         });
         Panel->RegisterEventHandler(kEventMouseDown, [this](auto&) { ++AncestorPresses; });
     }
@@ -429,5 +434,30 @@ TEST_F(GameViewPointerDeliveryTests, RebindingSinkCancelsOldHostAndDoesNotReplay
     EXPECT_EQ(newHostEdges, 0);
     Panel->SetPointerCallback({});
     Editor.GetDispatcher()->Drain();
+}
+
+TEST_F(GameViewPointerDeliveryTests, RightPressReachesTheHudWithButtonOne)
+{
+    int button = -1;
+    Target->RegisterEventHandler(kEventMouseDown, [&button](UIEvent& e) { button = e.Button; });
+
+    Editor.OnMouseMove(225, 120);
+    Editor.OnMouseButton(1, true); // Input::kMouseButton_Right
+    Editor.GetDispatcher()->Drain();
+
+    EXPECT_EQ(button, 1) << "a right-press reached the HUD as button " << button
+                         << " - the viewport element is still dropping non-primary buttons";
+}
+
+TEST_F(GameViewPointerDeliveryTests, LeftPressIsDeliveredExactlyOnce)
+{
+    int presses = 0;
+    Target->RegisterEventHandler(kEventMouseDown, [&presses](UIEvent&) { ++presses; });
+
+    Editor.OnMouseMove(225, 120);
+    Editor.OnMouseButton(0, true);
+    Editor.GetDispatcher()->Drain();
+
+    EXPECT_EQ(presses, 1) << "position and button paths both synthesized a press";
 }
 }

@@ -35,11 +35,19 @@ class GameViewPanel : public DockPanel
     // Forward each viewport input transition immediately, normalized to its rect.
     // The callback resolves the current window/controller, rather than retaining
     // a controller across tear-off/redock. false ends the surface's gesture.
-    using PointerCallback = std::function<void(bool over, float x, float y, bool down, int mods)>;
+    //
+    // POSITION ONLY. A position is not a press: a bool cannot say which button, and the presses arrive on
+    // their own callback below, where the index survives. False ends the surface's gesture.
+    using PointerCallback = std::function<void(bool over, float x, float y, int mods)>;
     void SetPointerCallback(PointerCallback callback);
+
+    // A pointer BUTTON edge, with the engine's button index (Input::kMouseButton_*).
+    using PointerButtonCallback = std::function<void(int button, bool pressed, int mods)>;
+    void SetPointerButtonCallback(PointerButtonCallback callback);
     // Final owner teardown: revoke queued callbacks without invoking the sink.
     // The owner cancels surviving hosts before calling this.
     void ClearPointerCallback();
+    void ClearPointerButtonCallback();
     friend struct GameViewPanelTestAccess;
 
     void OnPostLayout() override;
@@ -60,7 +68,8 @@ class GameViewPanel : public DockPanel
     void RegisterViewportPointerHandlers(UIElement& viewport);
     void CancelViewportPointer();
     void ClearViewportPointerHandlers();
-    void ForwardViewportPointer(bool over, float x, float y, bool down, int mods);
+    void ForwardViewportPointer(bool over, float x, float y, int mods);
+    void ForwardViewportButton(int button, bool pressed, int mods);
 
   private:
     // Deferred layout bind. Three entry points reach it — the pre-mount warmup, the dock
@@ -85,6 +94,7 @@ class GameViewPanel : public DockPanel
     struct PointerSink
     {
         PointerCallback Callback;
+        PointerButtonCallback ButtonCallback;
         uint64_t Generation = 0;
     };
     std::shared_ptr<PointerSink> m_PointerSink;

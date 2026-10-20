@@ -102,6 +102,17 @@ class GameUIHost
     bool OnMouseButton(int button, bool pressed, int mods);
     bool OnScroll(Mathematics::Vector2 delta);
 
+    /// <summary>
+    /// Whether the primary button is currently held on this host.
+    /// </summary>
+    /// <remarks>
+    /// The editor forwards pointer POSITION from its own UI element and pointer BUTTONS from that
+    /// element's mouse events. A position update must therefore not also synthesize a primary press —
+    /// that is how one click becomes two. Feeding the host's own state back in makes SetPointer see no
+    /// edge, so the position path stays a position path.
+    /// </remarks>
+    bool PrimaryDown() const { return m_PrimaryDown; }
+
     // The source's primary button at the moment a gesture is cancelled. Held makes
     // the host swallow the release that follows, so raw MouseUp handlers never see
     // an orphan release and no press can arm controls until the source lets go.
