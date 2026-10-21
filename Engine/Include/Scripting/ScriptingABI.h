@@ -412,6 +412,11 @@ typedef void(GE_CDECL* GE_UIEventCallback)(const GE_UIEventData* ev, void* user)
 GE_API GE_Result GE_CDECL GE_GameUI_FindElement(uint64_t entityId, const char* id, uint64_t* outInstanceId);
 
 GE_API GE_Result GE_CDECL GE_UIElement_SetWidthPercent(uint64_t instanceId, float pct);
+
+// Move an element by writing its left/top offsets, in pixels, through the same style override bag
+// SetWidthPercent uses — so the write survives a .uxml reconcile and schedules the relayout itself.
+// GE_Result_NotFound if the handle no longer resolves.
+GE_API GE_Result GE_CDECL GE_UIElement_SetOffset(uint64_t instanceId, float x, float y);
 GE_API GE_Result GE_CDECL GE_UIElement_SetLabelText(uint64_t instanceId, const char* text);
 GE_API GE_Result GE_CDECL GE_UIElement_SetClass(uint64_t instanceId, const char* className, int32_t on);
 // Liveness as a QUERY, not as a failure: Ok with *outAlive 0 or 1. A caller asking

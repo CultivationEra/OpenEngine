@@ -148,6 +148,15 @@ namespace GameEngine.Scripting
             public bool SetWidthPercent(float pct)
                 => GE_UIElement_SetWidthPercent(InstanceId, pct) == 0;
 
+            /// <summary>Move this element to an offset in pixels, relative to its parent's content box.</summary>
+            /// <remarks>
+            /// A WRITE THE DOCUMENT DOES NOT OWN. It goes through the element's style override bag, the same one
+            /// SetWidthPercent uses, so a .uxml reconcile cannot drop it — which is what makes a dragged window
+            /// stay where it was put. False if the element no longer resolves.
+            /// </remarks>
+            public bool SetOffset(float x, float y)
+                => GE_UIElement_SetOffset(InstanceId, x, y) == 0;
+
             /// <summary>
             /// The pointer entered this element (the hover transition, not every move).
             /// <para>

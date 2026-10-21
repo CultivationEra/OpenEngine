@@ -132,6 +132,7 @@ TEST(ScriptingAbi, GameUiExportsAreSafeWithNoHost)
 	// With no host, no instance id resolves — including one that was live in an earlier
 	// session, since ids are never reused.
 	EXPECT_EQ(GE_UIElement_SetWidthPercent(1, 50.0f), GE_Result_NotFound);
+	EXPECT_EQ(GE_UIElement_SetOffset(1, 10.0f, 20.0f), GE_Result_NotFound);
 	EXPECT_EQ(GE_UIElement_SetLabelText(1, "100 / 100"), GE_Result_NotFound);
 	EXPECT_EQ(GE_UIElement_SetClass(1, "low-health", 1), GE_Result_NotFound);
 

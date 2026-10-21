@@ -238,6 +238,11 @@ GE_API GE_Result GE_CDECL GE_UIElement_SetWidthPercent(uint64_t instanceId, floa
     return Resolve(instanceId) ? GE_Result_Ok : GE_Result_NotFound;
 }
 
+GE_API GE_Result GE_CDECL GE_UIElement_SetOffset(uint64_t instanceId, float /*x*/, float /*y*/)
+{
+    return Resolve(instanceId) ? GE_Result_Ok : GE_Result_NotFound;
+}
+
 GE_API GE_Result GE_CDECL GE_UIElement_SetLabelText(uint64_t instanceId, const char* /*text*/)
 {
     ShimElement* el = Resolve(instanceId);

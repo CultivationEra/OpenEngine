@@ -196,6 +196,27 @@ GE_API GE_Result GE_CDECL GE_UIElement_SetWidthPercent(uint64_t instanceId, floa
     }
 }
 
+// Move an element by writing its left/top offsets, in pixels, through the same style override bag
+// SetWidthPercent uses. That is a different bag from the inline style attribute, which is why an authored
+// `left:` in the .uxml does not fight this and a reconcile cannot drop it.
+GE_API GE_Result GE_CDECL GE_UIElement_SetOffset(uint64_t instanceId, float x, float y)
+{
+    try
+    {
+        GameEngine::UIElement* el = ResolveElement(instanceId);
+        if (!el)
+            return GE_Result_NotFound;
+
+        el->Overrides().Set(GameEngine::Style::PositionLeft, GameEngine::StyleLength::Px(x));
+        el->Overrides().Set(GameEngine::Style::PositionTop, GameEngine::StyleLength::Px(y));
+        return GE_Result_Ok;
+    }
+    catch (...)
+    {
+        return GE_Result_Fail;
+    }
+}
+
 // Set a Label element's text. GE_Result_NotFound if the handle no longer resolves;
 // GE_Result_InvalidArg if the element is alive but isn't a Label (so the script learns it
 // resolved the wrong id).
