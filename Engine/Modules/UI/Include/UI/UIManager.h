@@ -361,6 +361,14 @@ class UIManager
     /// every row then sat under a pointer whose hover was pinned elsewhere.
     void ReleaseMouseCapture();
 
+    /// Takes the pointer for `element` until ReleaseMouseCapture().
+    ///
+    /// Capture pins the active target to the element — moves, releases and cancels are routed to it
+    /// whether or not the pointer is over it — which is the whole of what a drag needs and what a
+    /// control cannot get any other way. The press path does this internally for controls that claim
+    /// a press; this is the same state, reachable on purpose from outside.
+    void CaptureMouse(UIElement* element);
+
     const std::string& GetCaptureId() const { return m_CaptureId; }
 
     // Style/text resources for controls that need to recompute styles or

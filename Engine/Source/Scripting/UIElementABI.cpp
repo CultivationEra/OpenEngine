@@ -217,6 +217,50 @@ GE_API GE_Result GE_CDECL GE_UIElement_SetOffset(uint64_t instanceId, float x, f
     }
 }
 
+// Take the pointer for an element, so the rest of the gesture is routed to it wherever the pointer goes.
+GE_API GE_Result GE_CDECL GE_UIElement_CapturePointer(uint64_t instanceId)
+{
+    try
+    {
+        GameEngine::UIManager* ui = GameEngine::GameUI::GetUIManager();
+
+        if (!ui)
+            return GE_Result_NotFound;
+
+        GameEngine::UIElement* el = ui->FindElementByInstanceId(instanceId);
+
+        if (!el)
+            return GE_Result_NotFound;
+
+        ui->CaptureMouse(el);
+        return GE_Result_Ok;
+    }
+    catch (...)
+    {
+        return GE_Result_Fail;
+    }
+}
+
+// Let it go. The element is only the caller's proof that it is talking about the same gesture; the capture itself
+// belongs to the manager, so a released element that has since been destroyed still releases the pointer.
+GE_API GE_Result GE_CDECL GE_UIElement_ReleasePointer(uint64_t instanceId)
+{
+    try
+    {
+        GameEngine::UIManager* ui = GameEngine::GameUI::GetUIManager();
+
+        if (!ui || instanceId == 0)
+            return GE_Result_NotFound;
+
+        ui->ReleaseMouseCapture();
+        return GE_Result_Ok;
+    }
+    catch (...)
+    {
+        return GE_Result_Fail;
+    }
+}
+
 // Set a Label element's text. GE_Result_NotFound if the handle no longer resolves;
 // GE_Result_InvalidArg if the element is alive but isn't a Label (so the script learns it
 // resolved the wrong id).

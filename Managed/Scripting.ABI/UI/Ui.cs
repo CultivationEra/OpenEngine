@@ -47,6 +47,12 @@ namespace GameEngine.Scripting
         private static extern int GE_UIElement_SetOffset(ulong instanceId, float x, float y);
 
         [DllImport(kLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GE_UIElement_CapturePointer(ulong instanceId);
+
+        [DllImport(kLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GE_UIElement_ReleasePointer(ulong instanceId);
+
+        [DllImport(kLib, CallingConvention = CallingConvention.Cdecl)]
         private static extern int GE_UIElement_SetLabelText(ulong instanceId,
             [MarshalAs(UnmanagedType.LPUTF8Str)] string text);
 

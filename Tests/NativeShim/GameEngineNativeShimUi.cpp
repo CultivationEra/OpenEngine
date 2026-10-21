@@ -238,6 +238,16 @@ GE_API GE_Result GE_CDECL GE_UIElement_SetWidthPercent(uint64_t instanceId, floa
     return Resolve(instanceId) ? GE_Result_Ok : GE_Result_NotFound;
 }
 
+GE_API GE_Result GE_CDECL GE_UIElement_CapturePointer(uint64_t instanceId)
+{
+    return Resolve(instanceId) ? GE_Result_Ok : GE_Result_NotFound;
+}
+
+GE_API GE_Result GE_CDECL GE_UIElement_ReleasePointer(uint64_t instanceId)
+{
+    return instanceId == 0 ? GE_Result_NotFound : GE_Result_Ok;
+}
+
 GE_API GE_Result GE_CDECL GE_UIElement_SetOffset(uint64_t instanceId, float /*x*/, float /*y*/)
 {
     return Resolve(instanceId) ? GE_Result_Ok : GE_Result_NotFound;

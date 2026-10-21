@@ -157,6 +157,19 @@ namespace GameEngine.Scripting
             public bool SetOffset(float x, float y)
                 => GE_UIElement_SetOffset(InstanceId, x, y) == 0;
 
+            /// <summary>Take the pointer for this element until <see cref="ReleasePointer"/>.</summary>
+            /// <remarks>
+            /// EVERY MOVE, RELEASE AND CANCEL COMES HERE WHILE IT IS HELD, whether or not the pointer is over this
+            /// element — which is the whole of a drag. Without it a gesture ends the moment the pointer outruns the
+            /// element, and a fast hand outruns a small one immediately.
+            /// </remarks>
+            public bool CapturePointer()
+                => GE_UIElement_CapturePointer(InstanceId) == 0;
+
+            /// <summary>Let the pointer go, ending the capture begun by <see cref="CapturePointer"/>.</summary>
+            public bool ReleasePointer()
+                => GE_UIElement_ReleasePointer(InstanceId) == 0;
+
             /// <summary>
             /// The pointer entered this element (the hover transition, not every move).
             /// <para>
