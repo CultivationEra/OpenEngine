@@ -394,14 +394,20 @@ void GameViewPanel::RegisterViewportPointerHandlers(UIElement& viewport)
         // line after the press arrived carrying button 1 — which is why the game HUD could not see a
         // right-press in the editor at all. Only the LOOK LATCH stays primary-only: right-drag is not a
         // look gesture here.
-        m_PointerTokens[2] = element->RegisterEventHandler(kEventMouseDown, [this](UIEvent& e) {
+        m_PointerTokens[2] = element->RegisterEventHandler(kEventMouseDown, [this, forward](UIEvent& e) {
             if (e.Button == Input::kMouseButton_Left)
                 m_PointerDown = true;
+            // THE PRESS SAYS WHERE IT HAPPENED, BEFORE IT SAYS WHAT HAPPENED. A press can be the first event
+            // the view receives - focus by click is exactly that - and the game HUD will not press a button
+            // it has no pointer for. The position path is the same one the move handler uses, so this cannot
+            // disagree with it.
+            forward(e);
             ForwardViewportButton(e.Button, true, e.Mods);
         });
-        m_PointerTokens[3] = element->RegisterEventHandler(kEventMouseUp, [this](UIEvent& e) {
+        m_PointerTokens[3] = element->RegisterEventHandler(kEventMouseUp, [this, forward](UIEvent& e) {
             if (e.Button == Input::kMouseButton_Left)
                 m_PointerDown = false;
+            forward(e);
             ForwardViewportButton(e.Button, false, e.Mods);
         });
         m_PointerTokens[4] = element->RegisterEventHandler(kEventMouseLeave, [this](UIEvent&) {
