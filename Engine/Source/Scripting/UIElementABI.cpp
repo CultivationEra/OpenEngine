@@ -425,4 +425,29 @@ GE_API GE_Result GE_CDECL GE_UIElement_UnregisterEvent(uint64_t instanceId, cons
     }
 }
 
+// Where the element was drawn, in window space.
+GE_API GE_Result GE_CDECL GE_UIElement_GetRect(uint64_t instanceId, float* x, float* y, float* width, float* height)
+{
+    if (!x || !y || !width || !height)
+        return GE_Result_InvalidArg;
+
+    try
+    {
+        GameEngine::UIElement* el = ResolveElement(instanceId);
+        if (!el)
+            return GE_Result_NotFound;
+
+        const auto rect = el->GetWindowRect();
+        *x = rect.X;
+        *y = rect.Y;
+        *width = rect.Width;
+        *height = rect.Height;
+        return GE_Result_Ok;
+    }
+    catch (...)
+    {
+        return GE_Result_Fail;
+    }
+}
+
 } // extern "C"

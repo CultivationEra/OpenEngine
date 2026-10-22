@@ -230,6 +230,11 @@ TEST(ScriptingAbi, GameUiExportsAreSafeWithNoHost)
 	EXPECT_EQ(GE_UIElement_SetDropdownSelectedIndex(1, 0, 1), GE_Result_NotFound);
 	EXPECT_EQ(GE_UIElement_GetDropdownSelectedLabel(1, textBuf, sizeof(textBuf), &textLen),
 	          GE_Result_NotFound);
+
+	// The rect: a dead handle is NotFound, and a null out-parameter is InvalidArg rather than a crash.
+	float rx = 0.0f, ry = 0.0f, rw = 0.0f, rh = 0.0f;
+	EXPECT_EQ(GE_UIElement_GetRect(1, &rx, &ry, &rw, &rh), GE_Result_NotFound);
+	EXPECT_EQ(GE_UIElement_GetRect(1, nullptr, &ry, &rw, &rh), GE_Result_InvalidArg);
 }
 
 

@@ -459,6 +459,12 @@ GE_API GE_Result GE_CDECL GE_UIElement_SetDropdownSelectedIndex(uint64_t instanc
 GE_API GE_Result GE_CDECL GE_UIElement_GetDropdownSelectedLabel(uint64_t instanceId, char* buffer,
                                                                 int32_t bufferLen, int32_t* outLen);
 
+// The element's drawn box in window space, in CSS logical px: the box last solved for it, carried through its own
+// transform and every transformed ancestor's (UIElement::GetWindowRect). A tooltip, a menu or a drag anchors to this
+// instead of re-deriving numbers the document already solved.
+// A null out-parameter is InvalidArg; a handle that no longer resolves is NotFound.
+GE_API GE_Result GE_CDECL GE_UIElement_GetRect(uint64_t instanceId, float* x, float* y, float* width, float* height);
+
 // -------- Element TYPES defined outside C++ --------
 // The lifecycle layer: who may define element types, which tags they own, and what happens
 // to the live elements when their defining load context unloads. Addresses owners and tags,

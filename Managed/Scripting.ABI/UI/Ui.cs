@@ -98,6 +98,10 @@ namespace GameEngine.Scripting
             [MarshalAs(UnmanagedType.LPUTF8Str)] string text, int notify);
 
         [DllImport(kLib, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int GE_UIElement_GetRect(ulong instanceId, out float x, out float y,
+            out float width, out float height);
+
+        [DllImport(kLib, CallingConvention = CallingConvention.Cdecl)]
         private static extern int GE_UIElement_GetScrollOffset(ulong instanceId, out float outX,
             out float outY);
 

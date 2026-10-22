@@ -148,6 +148,24 @@ namespace GameEngine.Scripting
             public bool SetWidthPercent(float pct)
                 => GE_UIElement_SetWidthPercent(InstanceId, pct) == 0;
 
+            /// <summary>Where this element was drawn, in window space (CSS logical px).</summary>
+            /// <remarks>
+            /// THE COMMITTED RECT: it is the last solve, so an element created or restyled this frame answers
+            /// with the box it had before. Right for a hover or a tooltip - the pointer is over what was drawn -
+            /// and wrong for measuring a layout this frame just changed.
+            /// </remarks>
+            public bool TryGetRect(out UiRect rect)
+            {
+                if (GE_UIElement_GetRect(InstanceId, out var x, out var y, out var width, out var height) != 0)
+                {
+                    rect = default;
+                    return false;
+                }
+
+                rect = new UiRect(x, y, width, height);
+                return true;
+            }
+
             /// <summary>
             /// The pointer entered this element (the hover transition, not every move).
             /// <para>

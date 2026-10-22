@@ -854,5 +854,20 @@ GE_API GE_Result GE_CDECL GE_TestUI_ResetTypeLifecycle()
     return GE_Result_Ok;
 }
 
+GE_API GE_Result GE_CDECL GE_UIElement_GetRect(uint64_t instanceId, float* x, float* y, float* width, float* height)
+{
+    if (!x || !y || !width || !height)
+        return GE_Result_InvalidArg;
+
+    if (!Resolve(instanceId))
+        return GE_Result_NotFound;
+
+    *x = 0.0f;
+    *y = 0.0f;
+    *width = 0.0f;
+    *height = 0.0f;
+    return GE_Result_Ok;
+}
+
 } // extern "C"
 #endif
