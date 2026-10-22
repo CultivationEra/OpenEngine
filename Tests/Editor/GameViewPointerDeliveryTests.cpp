@@ -409,7 +409,7 @@ TEST_F(GameViewPointerDeliveryTests, ReconcileReresolvesTheViewportAndLayoutPass
 TEST_F(GameViewPointerDeliveryTests, ReconcileKeepingTheViewportDoesNotWireItTwice)
 {
     int forwards = 0;
-    Panel->SetPointerCallback([&](bool, float, float, bool, int) { ++forwards; });
+    Panel->SetPointerCallback([&](bool, float, float, int) { ++forwards; });
     Editor.GetDispatcher()->Drain();
 
     AnnounceReconcile();
@@ -424,7 +424,7 @@ TEST_F(GameViewPointerDeliveryTests, RebindingSinkCancelsOldHostAndDoesNotReplay
     Press();
     ASSERT_TRUE(Target->HasClass("pressed")) << "nothing reached the old host, so the rebind proves nothing";
     int newHostEdges = 0;
-    Panel->SetPointerCallback([&](bool over, float, float, bool, int) {
+    Panel->SetPointerCallback([&](bool over, float, float, int) {
         if (over)
             ++newHostEdges;
     });
