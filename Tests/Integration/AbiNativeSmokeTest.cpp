@@ -230,6 +230,9 @@ TEST(ScriptingAbi, GameUiExportsAreSafeWithNoHost)
 	EXPECT_EQ(GE_UIElement_SetDropdownSelectedIndex(1, 0, 1), GE_Result_NotFound);
 	EXPECT_EQ(GE_UIElement_GetDropdownSelectedLabel(1, textBuf, sizeof(textBuf), &textLen),
 	          GE_Result_NotFound);
+
+	// Paint order: a dead handle is NotFound rather than a silent write.
+	EXPECT_EQ(GE_UIElement_SetZIndex(1, 10), GE_Result_NotFound);
 }
 
 

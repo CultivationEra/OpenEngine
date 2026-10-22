@@ -425,4 +425,23 @@ GE_API GE_Result GE_CDECL GE_UIElement_UnregisterEvent(uint64_t instanceId, cons
     }
 }
 
+// Raise it above its siblings. The override bag is the same one FloatingPanel::Raise writes, and the style pass that
+// follows re-sorts the parent's children and re-runs hit-testing, so nothing is flagged by hand here.
+GE_API GE_Result GE_CDECL GE_UIElement_SetZIndex(uint64_t instanceId, int32_t zIndex)
+{
+    try
+    {
+        GameEngine::UIElement* el = ResolveElement(instanceId);
+        if (!el)
+            return GE_Result_NotFound;
+
+        el->Overrides().Set(GameEngine::Style::ZIndex, static_cast<int>(zIndex));
+        return GE_Result_Ok;
+    }
+    catch (...)
+    {
+        return GE_Result_Fail;
+    }
+}
+
 } // extern "C"

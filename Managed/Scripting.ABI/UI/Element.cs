@@ -148,6 +148,14 @@ namespace GameEngine.Scripting
             public bool SetWidthPercent(float pct)
                 => GE_UIElement_SetWidthPercent(InstanceId, pct) == 0;
 
+            /// <summary>Paint order among this element's siblings - higher is in front.</summary>
+            /// <remarks>
+            /// ORDER, NOT DEPTH. The UI has no depth test; this is which subtree is submitted later, and the hit
+            /// test reads the same number, so raising an element also makes it the one the pointer finds.
+            /// </remarks>
+            public bool SetZIndex(int zIndex)
+                => GE_UIElement_SetZIndex(InstanceId, zIndex) == 0;
+
             /// <summary>
             /// The pointer entered this element (the hover transition, not every move).
             /// <para>

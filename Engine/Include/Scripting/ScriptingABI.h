@@ -459,6 +459,11 @@ GE_API GE_Result GE_CDECL GE_UIElement_SetDropdownSelectedIndex(uint64_t instanc
 GE_API GE_Result GE_CDECL GE_UIElement_GetDropdownSelectedLabel(uint64_t instanceId, char* buffer,
                                                                 int32_t bufferLen, int32_t* outLen);
 
+// Paint order among the element's siblings, the same integer CSS's z-index resolves to. Children are stably sorted by
+// it when any sibling declares one, and hit-testing follows the same stacking context, so a raised element is also the
+// one the pointer finds first. This is UI order only: it has nothing to do with depth, reverse-Z, or coplanar surfaces.
+GE_API GE_Result GE_CDECL GE_UIElement_SetZIndex(uint64_t instanceId, int32_t zIndex);
+
 // -------- Element TYPES defined outside C++ --------
 // The lifecycle layer: who may define element types, which tags they own, and what happens
 // to the live elements when their defining load context unloads. Addresses owners and tags,

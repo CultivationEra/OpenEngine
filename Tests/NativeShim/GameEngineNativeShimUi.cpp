@@ -854,5 +854,10 @@ GE_API GE_Result GE_CDECL GE_TestUI_ResetTypeLifecycle()
     return GE_Result_Ok;
 }
 
+GE_API GE_Result GE_CDECL GE_UIElement_SetZIndex(uint64_t instanceId, int32_t /*zIndex*/)
+{
+    return Resolve(instanceId) ? GE_Result_Ok : GE_Result_NotFound;
+}
+
 } // extern "C"
 #endif
